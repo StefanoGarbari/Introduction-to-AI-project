@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from tiles import TILES
+import pygame
 
 @dataclass(frozen=True)
 class Position:
@@ -77,3 +78,101 @@ print(pos)
 
 
 
+
+###################### DEBUG GRAPHICS ########################
+# chatgpt did this, i wanted to check if the board was working properly
+###################### ############## ########################
+
+pygame.init()
+TILE_SIZE = 100
+N = 6
+WIDTH = HEIGHT = N * TILE_SIZE
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Tile Board")
+
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+BLUE = (50, 100, 255)
+
+# ----------------------------
+# Entry position calculation
+# ----------------------------
+
+def rotate_entry(entry: int, rotation: int) -> int:
+    """Rotate entry number 90° clockwise per rotation step."""
+    return ((entry - 1 + 2 * rotation) % 8) + 1
+
+
+def get_entry_point(i: int, j: int, entry: int, rotation: int):
+    """Return pixel coordinates of an entry point."""
+    entry = rotate_entry(entry, rotation)
+
+    x = j * TILE_SIZE
+    y = i * TILE_SIZE
+    S = TILE_SIZE
+
+    if entry == 1:
+        return (x + S//3, y + S)
+    elif entry == 2:
+        return (x + 2*S//3, y + S)
+    elif entry == 3:
+        return (x + S, y + 2*S//3)
+    elif entry == 4:
+        return (x + S, y + S//3)
+    elif entry == 5:
+        return (x + 2*S//3, y)
+    elif entry == 6:
+        return (x + S//3, y)
+    elif entry == 7:
+        return (x, y + S//3)
+    elif entry == 8:
+        return (x, y + 2*S//3)
+
+
+# ----------------------------
+# Drawing
+# ----------------------------
+
+def draw_board():
+    screen.fill(WHITE)
+
+    for i in range(N):
+        for j in range(N):
+            rect = pygame.Rect(j*TILE_SIZE, i*TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            pygame.draw.rect(screen, BLACK, rect, 1)
+
+            tile = board[i][j]
+            if tile:
+                drawn = set()
+
+                for a, b in tile.tile.items():
+                    if a in drawn:
+                        continue
+
+                    p1 = get_entry_point(i, j, a, tile.rotation)
+                    p2 = get_entry_point(i, j, b, tile.rotation)
+
+                    pygame.draw.line(screen, BLUE, p1, p2, 3)
+
+                    drawn.add(a)
+                    drawn.add(b)
+
+
+# ----------------------------
+# Main loop
+# ----------------------------
+
+running = True
+clock = pygame.time.Clock()
+
+while running:
+    clock.tick(60)
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    draw_board()
+    pygame.display.flip()
+
+pygame.quit()
