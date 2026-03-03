@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from random import shuffle
 from tiles import TILES
 import pygame
 
@@ -8,9 +9,11 @@ class Position:
     j: int
     entry: int
 
+Tile = dict[int, int]
+
 @dataclass(frozen=True)
 class PlacedTile:
-    tile: dict[int, int]
+    tile: Tile
     rotation: int
 
 Board = list[list[PlacedTile | None]]
@@ -18,6 +21,8 @@ Board = list[list[PlacedTile | None]]
 class State:
     def __init__(self, N=6):
         self.board : Board = [[None for _ in range(N)] for _ in range(N)]
+        self.draw_pile : list[Tile] = [t for t in TILES]
+        shuffle(self.draw_pile)
 
     def follow_path(self, start: Position) -> tuple[Position, bool]:
         # entry: (di, dj, new_entry)
