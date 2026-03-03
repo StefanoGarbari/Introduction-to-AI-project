@@ -15,65 +15,68 @@ class PlacedTile:
 
 Board = list[list[PlacedTile | None]]
 
-board : Board = [[None for _ in range(6)] for _ in range(6)]
+class State:
+    def __init__(self, N=6):
+        self.board : Board = [[None for _ in range(N)] for _ in range(N)]
+
+    def follow_path(self, start: Position) -> tuple[Position, bool]:
+        # entry: (di, dj, new_entry)
+        ENTRY_MAP = {
+            1: (1, 0, 6),
+            2: (1, 0, 5),
+            3: (0, 1, 8),
+            4: (0, 1, 7),
+            5: (-1, 0, 2),
+            6: (-1, 0, 1),
+            7: (0, -1, 4),
+            8: (0, -1, 3),
+        }
+
+        # calculate coordinates i,j of the next tile
+        # calculate entry point of the next tile
+        di, dj, entry = ENTRY_MAP[start.entry]
+        i = start.i + di
+        j = start.j + dj
+
+        # check if the new position is outside of the board
+        if i < 0 or i >= len(self.board) or j < 0 or j >= len(self.board[0]):
+            return Position(i=i, j=j, entry=entry), False
+        
+        # check if the new position doesn't contain a tile
+        if self.board[i][j] is None:
+            return start, True
+        
+
+        # rotate the entry point instead of the tile (easier)
+        entry_rotated = entry - 2 * self.board[i][j].rotation
+        if entry_rotated <= 0:
+            entry_rotated += 8
+
+        # follow tile path
+        exit_rotated = self.board[i][j].tile[entry_rotated]
+
+        # rotate back the exit
+        exit = exit_rotated + 2 * self.board[i][j].rotation
+        if exit > 8:
+            exit -= 8
+
+        return self.follow_path(Position(i=i, j=j, entry=exit))
 
 
-def follow_path(start: Position) -> tuple[Position, bool]:
-    # entry: (di, dj, new_entry)
-    ENTRY_MAP = {
-        1: (1, 0, 6),
-        2: (1, 0, 5),
-        3: (0, 1, 8),
-        4: (0, 1, 7),
-        5: (-1, 0, 2),
-        6: (-1, 0, 1),
-        7: (0, -1, 4),
-        8: (0, -1, 3),
-    }
-
-    # calculate coordinates i,j of the next tile
-    # calculate entry point of the next tile
-    di, dj, entry = ENTRY_MAP[start.entry]
-    i = start.i + di
-    j = start.j + dj
-
-    # check if the new position is outside of the board
-    if i < 0 or i >= 6 or j < 0 or j >= 6:
-        return Position(i=i, j=j, entry=entry), False
-    
-    # check if the new position doesn't contain a tile
-    if board[i][j] is None:
-        return start, True
-    
-
-    # rotate the entry point instead of the tile (easier)
-    entry_rotated = entry - 2 * board[i][j].rotation
-    if entry_rotated <= 0:
-        entry_rotated += 8
-
-    # follow tile path
-    exit_rotated = board[i][j].tile[entry_rotated]
-
-    # rotate back the exit
-    exit = exit_rotated + 2 * board[i][j].rotation
-    if exit > 8:
-        exit -= 8
-
-    return follow_path(Position(i=i, j=j, entry=exit))
-
+state = State()
 
 # test tiles 
-board[0][0] = PlacedTile(TILES[2], 0)
-board[0][1] = PlacedTile(TILES[8], 2)
-board[1][1] = PlacedTile(TILES[3], 2)
-board[2][1] = PlacedTile(TILES[12], 3)
-board[2][0] = PlacedTile(TILES[13], 1)
+state.board[0][0] = PlacedTile(TILES[2], 0)
+state.board[0][1] = PlacedTile(TILES[8], 2)
+state.board[1][1] = PlacedTile(TILES[3], 2)
+state.board[2][1] = PlacedTile(TILES[12], 3)
+state.board[2][0] = PlacedTile(TILES[13], 1)
 
-board[5][3] = PlacedTile(TILES[30], 3)
-board[4][3] = PlacedTile(TILES[25], 3)
-board[4][2] = PlacedTile(TILES[34], 0)
+state.board[5][3] = PlacedTile(TILES[30], 3)
+state.board[4][3] = PlacedTile(TILES[25], 3)
+state.board[4][2] = PlacedTile(TILES[34], 0)
 
-pos = follow_path(Position(0,-1,3))
+pos = state.follow_path(Position(0,-1,3))
 print(pos)
 
 
@@ -85,8 +88,8 @@ print(pos)
 
 pygame.init()
 TILE_SIZE = 100
-N = 6
-WIDTH = HEIGHT = N * TILE_SIZE
+HEIGHT = len(state.board) * TILE_SIZE
+WIDTH = len(state.board[0]) * TILE_SIZE
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Tile Board")
 
@@ -136,12 +139,12 @@ def get_entry_point(i: int, j: int, entry: int, rotation: int):
 def draw_board():
     screen.fill(WHITE)
 
-    for i in range(N):
-        for j in range(N):
+    for i in range(len(state.board)):
+        for j in range(len(state.board[0])):
             rect = pygame.Rect(j*TILE_SIZE, i*TILE_SIZE, TILE_SIZE, TILE_SIZE)
             pygame.draw.rect(screen, BLACK, rect, 1)
 
-            tile = board[i][j]
+            tile = state.board[i][j]
             if tile:
                 drawn = set()
 
