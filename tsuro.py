@@ -1,7 +1,9 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from random import shuffle
 from tiles import TILES
 import pygame
+from abc import ABC, abstractmethod
 
 @dataclass(frozen=True)
 class Position:
@@ -16,13 +18,35 @@ class PlacedTile:
     tile: Tile
     rotation: int
 
+class Player(ABC):
+    start: Position
+    hand : list[Tile] = []
+
+    def __init__(self):
+        self.hand = []
+        self.start = None
+
+    @abstractmethod
+    def play(self, state: State):
+        """
+        Play using this strategy
+        """
+        pass
+
 Board = list[list[PlacedTile | None]]
 
 class State:
-    def __init__(self, N=6):
+    def __init__(self, players: list[Player], N=6):
         self.board : Board = [[None for _ in range(N)] for _ in range(N)]
+
         self.draw_pile : list[Tile] = [t for t in TILES]
         shuffle(self.draw_pile)
+
+        self.players = players
+        for player in self.players:
+            for _ in range(3):
+                player.hand.append(self.draw_pile.pop())
+
 
     def follow_path(self, start: Position) -> tuple[Position, bool]:
         # entry: (di, dj, new_entry)
@@ -68,7 +92,7 @@ class State:
         return self.follow_path(Position(i=i, j=j, entry=exit))
 
 
-state = State()
+state = State([])
 
 # test tiles 
 state.board[0][0] = PlacedTile(TILES[2], 0)
