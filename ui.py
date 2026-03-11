@@ -4,6 +4,19 @@ import pygame
 TILE_SIZE = 100
 HAND_AREA = 140
 
+COLORS = [
+    (255, 0, 0),      # red
+    (0, 255, 0),      # green
+    (0, 0, 255),      # blue
+    (255, 255, 0),    # yellow
+    (255, 165, 0),    # orange
+    (128, 0, 128),    # purple
+]
+
+BACKGROUND = (225, 191, 146)
+TILE_COLOR = (139,69,19)
+PATH_COLOR = (255, 255, 255)
+
 class TsuroUI:
 
     def __init__(self, board_width=6, board_height=6):
@@ -17,18 +30,13 @@ class TsuroUI:
 
         self.board_pixel_height = board_height * TILE_SIZE
 
-        self.WHITE = (255,255,255)
-        self.BLACK = (0,0,0)
-        self.BLUE = (50,100,255)
-        self.RED = (255,100,0)
-
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Game")
 
 
     def draw_board(self, state):
-        self.screen.fill(self.WHITE)
+        self.screen.fill(BACKGROUND)
 
         for i,row in enumerate(state.board):
             for j,tile in enumerate(row):
@@ -40,16 +48,19 @@ class TsuroUI:
                     TILE_SIZE
                 )
 
-                pygame.draw.rect(self.screen, self.BLACK, rect, 1)
+                if state.board[i][j]:
+                    pygame.draw.rect(self.screen, TILE_COLOR, rect)
+                else:
+                    pygame.draw.rect(self.screen, TILE_COLOR, rect, 1)
 
                 if tile:
                     self.draw_tile(i, j, tile)
         
-        for p in state.players:
-            self.draw_path(state, p.start)
+        for i, p in enumerate(state.players):
+            self.draw_path(state, p.start, COLORS[i%len(COLORS)])
 
 
-    def draw_path(self, state, start):
+    def draw_path(self, state, start, color):
         ENTRY_MAP = {
             1: (1, 0, 6),
             2: (1, 0, 5),
@@ -70,7 +81,7 @@ class TsuroUI:
         # check if the new position is outside of the board
         # check if the new position doesn't contain a tile
         if i < 0 or i >= len(state.board) or j < 0 or j >= len(state.board[0]) or state.board[i][j] is None:
-            pygame.draw.circle(self.screen, self.RED, self.get_entry_point(start.i, start.j, start.entry, 0), 7)
+            pygame.draw.circle(self.screen, color, self.get_entry_point(start.i, start.j, start.entry, 0), 7)
             return
 
 
@@ -91,9 +102,9 @@ class TsuroUI:
         p1 = self.get_entry_point(i, j, entry, 0)
         p2 = self.get_entry_point(i, j, exit, 0)
 
-        pygame.draw.line(self.screen, self.RED, p1, p2, 3)
+        pygame.draw.line(self.screen, color, p1, p2, 3)
 
-        self.draw_path(state, Position(i=i, j=j, entry=exit))
+        self.draw_path(state, Position(i=i, j=j, entry=exit), color)
 
 
     
@@ -140,7 +151,7 @@ class TsuroUI:
             p1 = self.get_entry_point(i,j,a,tile.rotation)
             p2 = self.get_entry_point(i,j,b,tile.rotation)
 
-            pygame.draw.line(self.screen, self.BLUE, p1, p2, 3)
+            pygame.draw.line(self.screen, PATH_COLOR, p1, p2, 3)
 
             drawn.add(a)
             drawn.add(b)
@@ -229,7 +240,7 @@ class TsuroUI:
 
             rect = pygame.Rect(x, y, TILE_SIZE, TILE_SIZE)
 
-            pygame.draw.rect(self.screen, self.BLACK, rect, 1)
+            pygame.draw.rect(self.screen, TILE_COLOR, rect)
 
             self.draw_tile_from_rect(tile, rect)
 
@@ -270,7 +281,7 @@ class TsuroUI:
             p1 = self.get_entry_point_rect(rect, a, tile.rotation)
             p2 = self.get_entry_point_rect(rect, b, tile.rotation)
 
-            pygame.draw.line(self.screen, self.BLUE, p1, p2, 3)
+            pygame.draw.line(self.screen, PATH_COLOR, p1, p2, 3)
 
             drawn.add(a)
             drawn.add(b)
