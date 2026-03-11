@@ -285,5 +285,3 @@ class TsuroUI:
 
             drawn.add(a)
             drawn.add(b)
-
-tsuro_ui = TsuroUI()
