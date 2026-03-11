@@ -163,7 +163,7 @@ class TsuroUI:
 
     def choose_tile(self, state, hand):
 
-        selected_tile = None
+        hand_with_rotation = [PlacedTile(tile, 0) for tile in hand]
 
         while True:
 
@@ -178,15 +178,19 @@ class TsuroUI:
                 if event.type == pygame.MOUSEBUTTONDOWN:
 
                     x,y = pygame.mouse.get_pos()
-
                     result = self.handle_click(x,y,hand)
 
-                    if result:
-                        return result
+                    if result != -1:
+                        if event.button == 1:   # LEFT CLICK
+                            return hand_with_rotation[result]
+
+                        elif event.button == 3: # RIGHT CLICK
+                            r = (hand_with_rotation[result].rotation + 1) % 4
+                            hand_with_rotation[result] = PlacedTile(hand_with_rotation[result].tile, r)
                 
 
             self.draw_board(state)
-            self.draw_hand(hand)
+            self.draw_hand(hand_with_rotation)
 
             pygame.display.flip()
 
@@ -194,21 +198,21 @@ class TsuroUI:
 
         n = len(hand)
         if n == 0:
-            return None
+            return -1
 
         spacing = self.width // (n + 1)
         tile_y = self.board_pixel_height + 20
 
-        for idx, tile in enumerate(hand):
+        for idx in range(n):
 
             tile_x = spacing * (idx + 1) - TILE_SIZE // 2
 
             rect = pygame.Rect(tile_x, tile_y, TILE_SIZE, TILE_SIZE)
 
             if rect.collidepoint(x, y):
-                return PlacedTile(tile, 0)
+                return idx
 
-        return None
+        return -1
 
     def draw_hand(self, hand):
 
@@ -227,7 +231,7 @@ class TsuroUI:
 
             pygame.draw.rect(self.screen, self.BLACK, rect, 1)
 
-            self.draw_tile_from_rect(PlacedTile(tile, 0), rect)
+            self.draw_tile_from_rect(tile, rect)
 
     def get_entry_point_rect(self, rect, entry, rotation):
 
