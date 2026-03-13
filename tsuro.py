@@ -49,6 +49,32 @@ class State:
 
         self.active_player = 0
 
+    def copy(self) -> State:
+        new_state = object.__new__(State)
+
+        # new board structure, same tiles
+        new_state.board = [row[:] for row in self.board]
+
+        # new draw pile list, same tiles
+        new_state.draw_pile = self.draw_pile[:]
+
+        # copy players (same class, copied data)
+        new_players = []
+        for p in self.players:
+            new_p = p.__class__.__new__(p.__class__)  # create instance of same subclass
+
+            new_p.hand = p.hand[:]        # new list, same tiles
+            new_p.start = p.start         # same position reference
+
+            new_players.append(new_p)
+
+        new_state.players = new_players
+
+        # copy active player index
+        new_state.active_player = self.active_player
+
+        return new_state
+
     def follow_path(self, start: Position) -> tuple[Position, Position, bool]:
         # entry: (di, dj, new_entry)
         ENTRY_MAP = {
@@ -125,6 +151,11 @@ class State:
         while not self.is_player_alive(self.players[i]):
             i = (i+1) % len(self.players)
         self.active_player = i
+
+    def results(self, action: Action) -> State:
+        state = self.copy()
+        state.apply(action)
+        return state
 
     def actions(self) -> list[Action]:
         p = self.players[self.active_player]
