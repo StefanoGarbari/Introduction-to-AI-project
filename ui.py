@@ -11,6 +11,8 @@ COLORS = [
     (255, 255, 0),    # yellow
     (255, 165, 0),    # orange
     (128, 0, 128),    # purple
+    (255, 120, 180),  # pink
+    (64, 224, 208),   # turquoise
 ]
 
 BACKGROUND = (225, 191, 146)

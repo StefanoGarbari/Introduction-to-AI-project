@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from random import shuffle, randint
+from random import randrange, randint
 from tiles import TILES
 from abc import ABC, abstractmethod
 
@@ -41,12 +41,11 @@ class State:
         self.board : Board = [[None for _ in range(N)] for _ in range(N)]
 
         self.draw_pile : list[Tile] = [t for t in TILES]
-        shuffle(self.draw_pile)
 
         self.players = players
         for player in self.players:
             for _ in range(3):
-                player.hand.append(self.draw_pile.pop())
+                player.hand.append(self.draw_pile.pop(randrange(len(self.draw_pile))))
 
         self.active_player = 0
 
@@ -108,7 +107,7 @@ class State:
 
         # player draws a new tile
         if self.draw_pile:
-            action.player.hand.append(self.draw_pile.pop())
+            action.player.hand.append(self.draw_pile.pop(randrange(len(self.draw_pile))))
 
         # if any player was killed, put its tiles back in the draw pile
         for p in self.players:
