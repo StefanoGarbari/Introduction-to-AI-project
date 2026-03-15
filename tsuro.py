@@ -33,7 +33,7 @@ Board = list[list[PlacedTile | None]]
 
 @dataclass
 class Action:
-    player: Player
+    player: int
     placed_tile: PlacedTile
 
 class State:
@@ -120,20 +120,37 @@ class State:
 
         return self.follow_path(Position(i=i, j=j, entry=exit))
 
-    def is_player_alive(self, player: Player):
+    def is_player_alive(self, player: Player) -> bool:
         return self.follow_path(player.start)[2]
 
+    def is_terminal(self) -> bool:
+        if sum(self.is_player_alive(p) for p in self.players) <= 1:
+            return True
+        if sum(len(p.hand) for p in self.players) == 0:
+            return True
+        return False
+
+    def get_result(self, player: Player) -> float:
+        return 1 if self.is_player_alive(player) else 0
+
     def apply(self, action: Action):
+        if action.player != self.active_player:
+            raise Exception("Illegal action! The player is not the active player!")
+        
+        player = self.players[action.player]
+        if action.placed_tile.tile not in player.hand:
+            raise Exception("Illegal action! The tile is not in the hand of player!")
+
         # remove the tile from the player's hand
-        action.player.hand.remove(action.placed_tile.tile)
+        player.hand.remove(action.placed_tile.tile)
 
         # place the tile on the board
-        _, next_pos, _ = self.follow_path(action.player.start)
+        _, next_pos, _ = self.follow_path(player.start)
         self.board[next_pos.i][next_pos.j] = action.placed_tile
 
         # player draws a new tile
         if self.draw_pile:
-            action.player.hand.append(self.draw_pile.pop(randrange(len(self.draw_pile))))
+            player.hand.append(self.draw_pile.pop(randrange(len(self.draw_pile))))
 
         # if any player was killed, put its tiles back in the draw pile
         for p in self.players:
@@ -173,9 +190,9 @@ class State:
                 # simulate
                 self.board[next_pos.i][next_pos.j] = placed
                 if self.is_player_alive(p):
-                    legal_actions.append(Action(p, placed))
+                    legal_actions.append(Action(self.active_player, placed))
                 else:
-                    illegal_actions.append(Action(p, placed))
+                    illegal_actions.append(Action(self.active_player, placed))
 
                 # undo
                 self.board[next_pos.i][next_pos.j] = None
