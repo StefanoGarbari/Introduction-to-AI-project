@@ -5,16 +5,10 @@ NUM_GAMES = 100
 
 # Change these strings if your main.py prints different win messages
 PLAYER_1_MARKERS = [
-    "Player 1 wins",
-    "player 1 wins",
     "winner: 1",
-    "winner is player 1",
 ]
 PLAYER_2_MARKERS = [
-    "Player 2 wins",
-    "player 2 wins",
     "winner: 2",
-    "winner is player 2",
 ]
 
 
@@ -41,6 +35,7 @@ def main() -> None:
     unknown = 0
 
     for i in range(1, NUM_GAMES + 1):
+        print(f"Running game {i}/{NUM_GAMES}")
         try:
             output = run_one_game()
 
