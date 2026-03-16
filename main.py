@@ -4,7 +4,9 @@ from players.ui_player import UIPlayer
 from players.mcts_ai_player import MCTSPlayer
 from ui import TsuroUI
 from random import randint
-
+import time
+import sys
+import pygame
 
 class Game:
     def __init__(self, players: list[Player]):
@@ -60,6 +62,9 @@ class Game:
                 if self.state.is_player_alive(p):
                     print(f"Winner: {i}")
             self._winners_announced = True
+            time.sleep(1)       # optional, lets you see the result
+            pygame.quit()
+            sys.exit()
 
 ui = TsuroUI()
 

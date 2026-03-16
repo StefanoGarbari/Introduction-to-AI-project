@@ -1,14 +1,14 @@
 import subprocess
 import sys
 
-NUM_GAMES = 100
+NUM_GAMES = 5
 
 # Change these strings if your main.py prints different win messages
 PLAYER_1_MARKERS = [
-    "winner: 1",
+    "Winner: 0",
 ]
 PLAYER_2_MARKERS = [
-    "winner: 2",
+    "Winner: 1",
 ]
 
 
