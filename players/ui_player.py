@@ -1,4 +1,4 @@
-from tsuro import Player, Action
+from tsuro import Player, Action, ActionType
 from ui import TsuroUI
 
 class UIPlayer(Player):
@@ -7,4 +7,4 @@ class UIPlayer(Player):
         self.ui = ui
 
     def choose_action(self, state):
-        return Action(self, self.ui.choose_tile(state, self.hand))
+        return Action(ActionType.PLAY_TILE, state.players.index(self), self.ui.choose_tile(state, self.hand))

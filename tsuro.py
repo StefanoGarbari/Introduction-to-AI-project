@@ -1,8 +1,9 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from random import randrange, randint
+from random import randrange
 from tiles import TILES
 from abc import ABC, abstractmethod
+from enum import Enum
 
 @dataclass(frozen=True)
 class Position:
@@ -31,10 +32,16 @@ class Player(ABC):
 
 Board = list[list[PlacedTile | None]]
 
+class ActionType(Enum):
+    PLAY_TILE = 1
+    DRAW_TILE = 2
+
 @dataclass
 class Action:
+    type: ActionType
     player: int
-    placed_tile: PlacedTile
+    placed_tile: PlacedTile | None = None
+    drawn_tile: Tile | None = None
 
 class State:
     def __init__(self, players: list[Player], N=6):
@@ -48,6 +55,7 @@ class State:
                 player.hand.append(self.draw_pile.pop(randrange(len(self.draw_pile))))
 
         self.active_player = 0
+        self.has_played = False
 
     def copy(self) -> State:
         new_state = object.__new__(State)
@@ -70,8 +78,8 @@ class State:
 
         new_state.players = new_players
 
-        # copy active player index
         new_state.active_player = self.active_player
+        new_state.has_played = self.has_played
 
         return new_state
 
@@ -136,38 +144,50 @@ class State:
     def apply(self, action: Action):
         if action.player != self.active_player:
             raise Exception("Illegal action! The player is not the active player!")
-        
+
         player = self.players[action.player]
-        if action.placed_tile.tile not in player.hand:
-            raise Exception("Illegal action! The tile is not in the hand of player!")
 
-        # remove the tile from the player's hand
-        player.hand.remove(action.placed_tile.tile)
+        if action.type == ActionType.DRAW_TILE:
+            # player draws a new tile
+            if self.draw_pile:
+                tile = self.draw_pile.pop(randrange(len(self.draw_pile)))
+                player.hand.append(tile)
+                action.drawn_tile = tile
 
-        # place the tile on the board
-        _, next_pos, _ = self.follow_path(player.start)
-        self.board[next_pos.i][next_pos.j] = action.placed_tile
+            # update next player
+            # if all are dead, there is no active player
+            if all(not self.is_player_alive(p) for p in self.players):
+                self.active_player = None
+            else:
+                i = (self.active_player+1) % len(self.players)
+                # skip players who already lost
+                while not self.is_player_alive(self.players[i]):
+                    i = (i+1) % len(self.players)
+                self.active_player = i
+            
+            # new active player still has to play
+            self.has_played = False
 
-        # player draws a new tile
-        if self.draw_pile:
-            player.hand.append(self.draw_pile.pop(randrange(len(self.draw_pile))))
+        if action.type == ActionType.PLAY_TILE:
+            if action.placed_tile.tile not in player.hand:
+                raise Exception("Illegal action! The tile is not in the hand of player!")
 
-        # if any player was killed, put its tiles back in the draw pile
-        for p in self.players:
-            if not self.is_player_alive(p):
-                self.draw_pile.extend(p.hand)
-                p.hand.clear()
+            # remove the tile from the player's hand
+            player.hand.remove(action.placed_tile.tile)
 
-        # update next player
-        # if all are dead, there is no active player
-        if all(not self.is_player_alive(p) for p in self.players):
-            self.active_player = None
-            return
-        i = (self.active_player+1) % len(self.players)
-        # skip players who already lost
-        while not self.is_player_alive(self.players[i]):
-            i = (i+1) % len(self.players)
-        self.active_player = i
+            # place the tile on the board
+            _, next_pos, _ = self.follow_path(player.start)
+            self.board[next_pos.i][next_pos.j] = action.placed_tile
+
+            # if any player was killed, put its tiles back in the draw pile
+            for p in self.players:
+                if not self.is_player_alive(p):
+                    self.draw_pile.extend(p.hand)
+                    p.hand.clear()
+                    
+            # active player has played
+            self.has_played = True
+
 
     def results(self, action: Action) -> State:
         state = self.copy()
@@ -175,6 +195,9 @@ class State:
         return state
 
     def actions(self) -> list[Action]:
+        if self.has_played:
+            return [Action(ActionType.DRAW_TILE, self.active_player)]
+
         p = self.players[self.active_player]
 
         # position where the tile will be placed
@@ -190,52 +213,11 @@ class State:
                 # simulate
                 self.board[next_pos.i][next_pos.j] = placed
                 if self.is_player_alive(p):
-                    legal_actions.append(Action(self.active_player, placed))
+                    legal_actions.append(Action(ActionType.PLAY_TILE, self.active_player, placed))
                 else:
-                    illegal_actions.append(Action(self.active_player, placed))
+                    illegal_actions.append(Action(ActionType.PLAY_TILE, self.active_player, placed))
 
                 # undo
                 self.board[next_pos.i][next_pos.j] = None
 
         return legal_actions if legal_actions else illegal_actions
-
-
-class Game:
-    def __init__(self, players: list[Player]):
-        self.state = State(players)
-
-    def play(self):
-        # choose starting point at random for now
-        height = len(self.state.board)
-        width = len(self.state.board[0])
-        for player in self.state.players:
-            ran = randint(0, 2 * height + 2 * width - 1)
-
-            if ran < width:                     # top edge
-                i = -1
-                j = ran
-                entry = randint(1, 2)
-            elif ran < width + height:          # right edge
-                i = ran - width
-                j = width
-                entry = randint(7, 8)
-            elif ran < 2 * width + height:      # bottom edge
-                i = height
-                j = ran - (width + height)
-                entry = randint(5, 6)
-            else:                               # left edge
-                i = ran - (2 * width + height)
-                j = -1
-                entry = randint(3, 4)
-
-            player.start = Position(i, j, entry)
-
-        # play in loop
-        while ( sum(self.state.is_player_alive(p) for p in self.state.players) >= 2 and
-                sum(t is not None for row in self.state.board for t in row) < height * width -1 ):
-            
-            active_player = self.state.players[self.state.active_player]
-            action = active_player.choose_action(self.state)
-            self.state.apply(action)
-
-
