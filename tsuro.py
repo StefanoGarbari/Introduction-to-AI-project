@@ -161,7 +161,7 @@ class State:
             else:
                 i = (self.active_player+1) % len(self.players)
                 # skip players who already lost
-                while not self.is_player_alive(self.players[i]):
+                while not self.is_player_alive(self.players[i]) or not self.players[i].hand:
                     i = (i+1) % len(self.players)
                 self.active_player = i
             
