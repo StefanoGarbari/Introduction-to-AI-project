@@ -3,7 +3,6 @@ from players.random_player import RandomPlayer
 from players.ui_player import UIPlayer
 from players.mcts_ai_player import MCTSPlayer
 from ui import TsuroUI
-import time
 from random import randint
 
 
@@ -15,27 +14,35 @@ class Game:
         # choose starting point at random for now
         height = len(self.state.board)
         width = len(self.state.board[0])
+
+        used_positions = set()
         for player in self.state.players:
-            ran = randint(0, 2 * height + 2 * width - 1)
+            while True:
+                ran = randint(0, 2 * height + 2 * width - 1)
 
-            if ran < width:                     # top edge
-                i = -1
-                j = ran
-                entry = randint(1, 2)
-            elif ran < width + height:          # right edge
-                i = ran - width
-                j = width
-                entry = randint(7, 8)
-            elif ran < 2 * width + height:      # bottom edge
-                i = height
-                j = ran - (width + height)
-                entry = randint(5, 6)
-            else:                               # left edge
-                i = ran - (2 * width + height)
-                j = -1
-                entry = randint(3, 4)
+                if ran < width:                     # top edge
+                    i = -1
+                    j = ran
+                    entry = randint(1, 2)
+                elif ran < width + height:          # right edge
+                    i = ran - width
+                    j = width
+                    entry = randint(7, 8)
+                elif ran < 2 * width + height:      # bottom edge
+                    i = height
+                    j = ran - (width + height)
+                    entry = randint(5, 6)
+                else:                               # left edge
+                    i = ran - (2 * width + height)
+                    j = -1
+                    entry = randint(3, 4)
 
-            player.start = Position(i, j, entry)
+                pos = Position(i, j, entry)
+
+                if pos not in used_positions:
+                    used_positions.add(pos)
+                    player.start = pos
+                    break
 
         # play in loop
         while not self.state.is_terminal():
