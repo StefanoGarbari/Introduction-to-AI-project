@@ -9,6 +9,7 @@ from random import randint
 class Game:
     def __init__(self, players: list[Player]):
         self.state = State(players)
+        self._winners_announced = False
 
     def play(self):
         # choose starting point at random for now
@@ -52,7 +53,13 @@ class Game:
             self.state.apply(action) # place tile
             self.state.apply(self.state.actions()[0]) # draw tile
             ui.show_board(self.state)
-
+        
+                # announce winners exactly once (only for the real game loop)
+        if not self._winners_announced and self.state.is_terminal():
+            for i, p in enumerate(self.state.players):
+                if self.state.is_player_alive(p):
+                    print(f"Winner: {i}")
+            self._winners_announced = True
 
 ui = TsuroUI()
 
