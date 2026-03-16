@@ -18,8 +18,11 @@ class Node:
 
 
 class MCTSPlayer(Player):
+    def __init__(self, time_limit=1.0):
+        super().__init__()
+        self.time_limit = time_limit
 
-    def choose_action(self, state: State, time_limit=1.0):
+    def choose_action(self, state: State):
 
         root = Node(state)
         start = time.time()
@@ -27,7 +30,7 @@ class MCTSPlayer(Player):
         nodes = 0
         chance_nodes = 0
 
-        while time.time() - start < time_limit:
+        while time.time() - start < self.time_limit:
 
             node = root
             sim_state = state.copy()
@@ -74,7 +77,6 @@ class MCTSPlayer(Player):
             while not sim_state.is_terminal():
                 actions = sim_state.actions()
                 if not actions:
-                    print("should not be here")
                     break
                 action = random.choice(actions)
                 sim_state.apply(action)
