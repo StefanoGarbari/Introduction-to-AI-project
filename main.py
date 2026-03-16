@@ -38,8 +38,7 @@ class Game:
             player.start = Position(i, j, entry)
 
         # play in loop
-        while ( sum(self.state.is_player_alive(p) for p in self.state.players) >= 2 and
-                sum(t is not None for row in self.state.board for t in row) < height * width -1 ):
+        while not self.state.is_terminal():
             
             active_player = self.state.players[self.state.active_player]
             action = active_player.choose_action(self.state)

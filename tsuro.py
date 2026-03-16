@@ -156,7 +156,7 @@ class State:
 
             # update next player
             # if all are dead, there is no active player
-            if all(not self.is_player_alive(p) for p in self.players):
+            if self.is_terminal():
                 self.active_player = None
             else:
                 i = (self.active_player+1) % len(self.players)
@@ -195,6 +195,9 @@ class State:
         return state
 
     def actions(self) -> list[Action]:
+        if self.active_player is None:
+            return []
+
         if self.has_played:
             return [Action(ActionType.DRAW_TILE, self.active_player)]
 
