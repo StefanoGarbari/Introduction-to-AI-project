@@ -45,7 +45,7 @@ class Game:
             action = active_player.choose_action(self.state)
             self.state.apply(action) # place tile
             self.state.apply(self.state.actions()[0]) # draw tile
-            ui.draw_board(self.state)
+            ui.show_board(self.state)
 
 
 ui = TsuroUI()

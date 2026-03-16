@@ -61,8 +61,6 @@ class TsuroUI:
         for i, p in enumerate(state.players):
             self.draw_path(state, p.start, COLORS[i%len(COLORS)])
 
-        pygame.display.flip()
-
 
     def draw_path(self, state, start, color):
         ENTRY_MAP = {
@@ -174,6 +172,11 @@ class TsuroUI:
                     running = False
 
             self.draw_board(state)
+            pygame.display.flip()
+
+    def show_board(self, state):
+        self.draw_board(state)
+        pygame.display.flip()
 
     def choose_tile(self, state, hand):
 
@@ -205,6 +208,8 @@ class TsuroUI:
 
             self.draw_board(state)
             self.draw_hand(hand_with_rotation)
+
+            pygame.display.flip()
 
     def handle_click(self, x, y, hand):
 
@@ -244,8 +249,6 @@ class TsuroUI:
             pygame.draw.rect(self.screen, TILE_COLOR, rect)
 
             self.draw_tile_from_rect(tile, rect)
-
-        pygame.display.flip()
 
     def get_entry_point_rect(self, rect, entry, rotation):
 
