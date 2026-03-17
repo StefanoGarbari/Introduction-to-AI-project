@@ -21,6 +21,7 @@ class MCTSPlayer(Player):
     def __init__(self, time_limit=1.0):
         super().__init__()
         self.time_limit = time_limit
+        self.name += " - MonteCarlo"
 
     def choose_action(self, state: State):
 
