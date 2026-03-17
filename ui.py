@@ -3,6 +3,7 @@ import pygame
 
 TILE_SIZE = 100
 HAND_AREA = 140
+SIDE_PANEL_WIDTH = 500  # adjust as needed
 
 COLORS = [
     (255, 0, 0),      # red
@@ -27,7 +28,7 @@ class TsuroUI:
         self.board_width = board_width
         self.board_height = board_height
 
-        self.width = board_width * TILE_SIZE
+        self.width = board_width * TILE_SIZE + SIDE_PANEL_WIDTH
         self.height = board_height * TILE_SIZE + HAND_AREA
 
         self.board_pixel_height = board_height * TILE_SIZE
@@ -172,10 +173,12 @@ class TsuroUI:
                     running = False
 
             self.draw_board(state)
+            self.draw_all_hands(state)
             pygame.display.flip()
 
     def show_board(self, state):
         self.draw_board(state)
+        self.draw_all_hands(state)
         pygame.display.flip()
 
     def choose_tile(self, state, hand):
@@ -207,6 +210,7 @@ class TsuroUI:
                 
 
             self.draw_board(state)
+            self.draw_all_hands(state)
             self.draw_hand(hand_with_rotation)
 
             pygame.display.flip()
@@ -237,7 +241,7 @@ class TsuroUI:
         if n == 0:
             return
 
-        spacing = self.width // (n + 1)
+        spacing = (self.width - SIDE_PANEL_WIDTH) // (n + 1)
         y = self.board_pixel_height + 20
 
         for idx, tile in enumerate(hand):
@@ -291,3 +295,41 @@ class TsuroUI:
 
             drawn.add(a)
             drawn.add(b)
+
+    def draw_all_hands(self, state):
+
+        hands = [p.hand for p in state.players]  # assumes each player has a hand
+
+        if not hands:
+            print("aaaaaaaaaaaaaaaaa")
+            return
+
+        panel_x = self.board_width * TILE_SIZE
+        panel_width = self.width - panel_x
+
+        total_height = len(hands) * TILE_SIZE + (len(hands) - 1) * 20
+        start_y = (self.board_pixel_height - total_height) // 2
+
+        for i, hand in enumerate(hands):
+
+            y = start_y + i * (TILE_SIZE + 20)
+
+            self.draw_hand_row([PlacedTile(tile, 0) for tile in hand], panel_x, panel_width, y)
+
+    def draw_hand_row(self, hand, panel_x, panel_width, y):
+
+        n = len(hand)
+        if n == 0:
+            return
+
+        spacing = panel_width // (n + 1)
+
+        for idx, tile in enumerate(hand):
+
+            x = panel_x + spacing * (idx + 1) - TILE_SIZE // 2
+
+            rect = pygame.Rect(x, y, TILE_SIZE, TILE_SIZE)
+
+            pygame.draw.rect(self.screen, TILE_COLOR, rect)
+
+            self.draw_tile_from_rect(tile, rect)
