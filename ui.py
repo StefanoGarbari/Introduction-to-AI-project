@@ -221,7 +221,7 @@ class TsuroUI:
         if n == 0:
             return -1
 
-        spacing = self.width // (n + 1)
+        spacing = (self.width - SIDE_PANEL_WIDTH) // (n + 1)
         tile_y = self.board_pixel_height + 20
 
         for idx in range(n):
