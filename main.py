@@ -60,7 +60,7 @@ class Game:
         if not self._winners_announced and self.state.is_terminal():
             for i, p in enumerate(self.state.players):
                 if self.state.is_player_alive(p):
-                    print(f"Winner: {i}")
+                    print(f"Winner: {i} ({p.name})")
             self._winners_announced = True
             time.sleep(1)       # optional, lets you see the result
             pygame.quit()
