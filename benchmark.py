@@ -1,7 +1,7 @@
 import subprocess
 import sys
 
-NUM_GAMES = 5
+NUM_GAMES = 50
 
 # Change these strings if your main.py prints different win messages
 PLAYER_1_MARKERS = [
@@ -42,14 +42,9 @@ def main() -> None:
             if contains_any(output, PLAYER_1_MARKERS):
                 p1_wins += 1
                 print(f"Game {i}: Player 1 win")
-            elif contains_any(output, PLAYER_2_MARKERS):
+            if contains_any(output, PLAYER_2_MARKERS):
                 p2_wins += 1
                 print(f"Game {i}: Player 2 win")
-            else:
-                unknown += 1
-                print(f"Game {i}: Could not determine winner")
-                print(output)
-                print("-" * 50)
 
         except subprocess.TimeoutExpired:
             unknown += 1
