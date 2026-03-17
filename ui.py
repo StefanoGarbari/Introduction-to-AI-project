@@ -2,12 +2,12 @@ from tsuro import Position, Tile, PlacedTile
 import pygame
 
 TILE_SIZE = 100
-HAND_AREA = 140
+HAND_AREA = 180
 SIDE_PANEL_WIDTH = 500  # adjust as needed
 
 COLORS = [
     (255, 0, 0),      # red
-    (0, 255, 0),      # green
+    (0, 150, 0),      # green
     (0, 0, 255),      # blue
     (255, 255, 0),    # yellow
     (255, 165, 0),    # orange
@@ -31,11 +31,15 @@ class TsuroUI:
         self.width = board_width * TILE_SIZE + SIDE_PANEL_WIDTH
         self.height = board_height * TILE_SIZE + HAND_AREA
 
+        self.board_pixel_width = board_width * TILE_SIZE
         self.board_pixel_height = board_height * TILE_SIZE
+
+        self.font = pygame.font.SysFont(None, 24)
+        self.font_big = pygame.font.SysFont(None, 35)
 
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.width, self.height))
-        pygame.display.set_caption("Game")
+        pygame.display.set_caption("Tsuro")
 
 
     def draw_board(self, state):
@@ -181,9 +185,9 @@ class TsuroUI:
         self.draw_all_hands(state)
         pygame.display.flip()
 
-    def choose_tile(self, state, hand):
+    def ui_choose_tile(self, state, player):
 
-        hand_with_rotation = [PlacedTile(tile, 0) for tile in hand]
+        hand_with_rotation = [PlacedTile(tile, 0) for tile in player.hand]
 
         while True:
 
@@ -198,7 +202,7 @@ class TsuroUI:
                 if event.type == pygame.MOUSEBUTTONDOWN:
 
                     x,y = pygame.mouse.get_pos()
-                    result = self.handle_click(x,y,hand)
+                    result = self.handle_click(x, y, player.hand)
 
                     if result != -1:
                         if event.button == 1:   # LEFT CLICK
@@ -212,6 +216,14 @@ class TsuroUI:
             self.draw_board(state)
             self.draw_all_hands(state)
             self.draw_hand(hand_with_rotation)
+            
+            i = state.players.index(player)
+            color = COLORS[i % len(COLORS)]
+            text_surface = self.font_big.render(f"{player.name}, play a tile", True, color)
+            text_rect = text_surface.get_rect(
+                center=(self.board_pixel_width // 2, self.board_pixel_height + 30)
+            )
+            self.screen.blit(text_surface, text_rect)
 
             pygame.display.flip()
 
@@ -222,7 +234,7 @@ class TsuroUI:
             return -1
 
         spacing = (self.width - SIDE_PANEL_WIDTH) // (n + 1)
-        tile_y = self.board_pixel_height + 20
+        tile_y = self.board_pixel_height + 60
 
         for idx in range(n):
 
@@ -242,7 +254,7 @@ class TsuroUI:
             return
 
         spacing = (self.width - SIDE_PANEL_WIDTH) // (n + 1)
-        y = self.board_pixel_height + 20
+        y = self.board_pixel_height + 60
 
         for idx, tile in enumerate(hand):
 
@@ -298,23 +310,40 @@ class TsuroUI:
 
     def draw_all_hands(self, state):
 
-        hands = [p.hand for p in state.players]  # assumes each player has a hand
+        players = state.players
 
-        if not hands:
-            print("aaaaaaaaaaaaaaaaa")
+        if not players:
             return
 
         panel_x = self.board_width * TILE_SIZE
         panel_width = self.width - panel_x
 
-        total_height = len(hands) * TILE_SIZE + (len(hands) - 1) * 20
+        row_height = TILE_SIZE + 30  # extra space for name
+        total_height = len(players) * row_height + (len(players) - 1) * 10
         start_y = (self.board_pixel_height - total_height) // 2
 
-        for i, hand in enumerate(hands):
+        for i, player in enumerate(players):
 
-            y = start_y + i * (TILE_SIZE + 20)
+            hand = player.hand
+            color = COLORS[i % len(COLORS)]
 
-            self.draw_hand_row([PlacedTile(tile, 0) for tile in hand], panel_x, panel_width, y)
+            y = start_y + i * (row_height + 10)
+
+            # --- draw name ---
+            is_active = (i == state.active_player)
+            font = self.font_big if is_active else self.font
+
+            text_surface = font.render(player.name, True, color)
+
+            text_rect = text_surface.get_rect(
+                center=(panel_x + panel_width // 2, y + 5)
+            )
+
+            self.screen.blit(text_surface, text_rect)
+
+            # --- draw hand below name ---
+            hand_y = y + 20
+            self.draw_hand_row([PlacedTile(tile, 0) for tile in hand], panel_x, panel_width, hand_y)
 
     def draw_hand_row(self, hand, panel_x, panel_width, y):
 

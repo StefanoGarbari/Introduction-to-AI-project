@@ -7,4 +7,4 @@ class UIPlayer(Player):
         self.ui = ui
 
     def choose_action(self, state):
-        return Action(ActionType.PLAY_TILE, state.players.index(self), self.ui.choose_tile(state, self.hand))
+        return Action(ActionType.PLAY_TILE, state.players.index(self), self.ui.ui_choose_tile(state, self))

@@ -19,9 +19,12 @@ class PlacedTile:
     rotation: int
 
 class Player(ABC):
+    i = 1
     def __init__(self):
         self.hand: list[Tile]= []
         self.start: Position= None
+        self.name = f"Player {Player.i}"
+        Player.i += 1
 
     @abstractmethod
     def choose_action(self, state: State) -> Action:
