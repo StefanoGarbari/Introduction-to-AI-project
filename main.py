@@ -14,5 +14,3 @@ try:
     game.play()
 except Exception as e:
     print(f"Error occurred during game play: {e}")
-
-ui.display_board(game.state)

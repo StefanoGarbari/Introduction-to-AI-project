@@ -288,5 +288,9 @@ class Game:
                     print(f"Winner: {i} ({p.name})")
             self._winners_announced = True
             time.sleep(1)       # optional, lets you see the result
-            pygame.quit()
-            sys.exit()
+
+            # uncomment the following when using the automated testing
+            # pygame.quit()
+            # sys.exit()
+
+        self.ui.display_board(self.state)
