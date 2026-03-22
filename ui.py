@@ -45,24 +45,16 @@ class TsuroUI:
     def draw_board(self, state):
         self.screen.fill(BACKGROUND)
 
-        for i,row in enumerate(state.board):
-            for j,tile in enumerate(row):
+        for i, row in enumerate(state.board):
+            for j, tile in enumerate(row):
 
-                rect = pygame.Rect(
-                    j*TILE_SIZE,
-                    i*TILE_SIZE,
-                    TILE_SIZE,
-                    TILE_SIZE
-                )
+                rect = pygame.Rect(j*TILE_SIZE, i*TILE_SIZE, TILE_SIZE, TILE_SIZE)
 
-                if state.board[i][j]:
-                    pygame.draw.rect(self.screen, TILE_COLOR, rect)
+                if tile:
+                    self.draw_tile(tile, rect)
                 else:
                     pygame.draw.rect(self.screen, TILE_COLOR, rect, 1)
 
-                if tile:
-                    self.draw_tile(i, j, tile)
-        
         for i, p in enumerate(state.players):
             self.draw_path(state, p.start, COLORS[i%len(COLORS)])
 
@@ -79,54 +71,43 @@ class TsuroUI:
             8: (0, -1, 3),
         }
 
-        # calculate coordinates i,j of the next tile
-        # calculate entry point of the next tile
         di, dj, entry = ENTRY_MAP[start.entry]
         i = start.i + di
         j = start.j + dj
 
-        # check if the new position is outside of the board
-        # check if the new position doesn't contain a tile
         if i < 0 or i >= len(state.board) or j < 0 or j >= len(state.board[0]) or state.board[i][j] is None:
-            pygame.draw.circle(self.screen, color, self.get_entry_point(start.i, start.j, start.entry, 0), 7)
+            pygame.draw.circle(self.screen, color, self.get_entry_point_rect(pygame.Rect(start.j*TILE_SIZE, start.i*TILE_SIZE, TILE_SIZE, TILE_SIZE), start.entry, 0), 7)
             return
 
-
-        # rotate the entry point instead of the tile (easier)
         entry_rotated = entry - 2 * state.board[i][j].rotation
         if entry_rotated <= 0:
             entry_rotated += 8
 
-        # follow tile path
         exit_rotated = state.board[i][j].tile[entry_rotated]
 
-        # rotate back the exit
         exit = exit_rotated + 2 * state.board[i][j].rotation
         if exit > 8:
             exit -= 8
-        
-        
-        p1 = self.get_entry_point(i, j, entry, 0)
-        p2 = self.get_entry_point(i, j, exit, 0)
+
+        rect = pygame.Rect(j*TILE_SIZE, i*TILE_SIZE, TILE_SIZE, TILE_SIZE)
+        p1 = self.get_entry_point_rect(rect, entry, 0)
+        p2 = self.get_entry_point_rect(rect, exit, 0)
 
         pygame.draw.line(self.screen, color, p1, p2, 3)
 
         self.draw_path(state, Position(i=i, j=j, entry=exit), color)
 
 
-    
     def rotate_entry(self, entry: int, rotation: int) -> int:
-        """Rotate entry number 90° clockwise per rotation step."""
         return ((entry - 1 + 2 * rotation) % 8) + 1
 
 
-    def get_entry_point(self, i: int, j: int, entry: int, rotation: int):
-        """Return pixel coordinates of an entry point."""
+    def get_entry_point_rect(self, rect, entry, rotation):
         entry = self.rotate_entry(entry, rotation)
 
-        x = j * TILE_SIZE
-        y = i * TILE_SIZE
-        S = TILE_SIZE
+        x = rect.x
+        y = rect.y
+        S = rect.width
 
         if entry == 1:
             return (x + S//3, y + S)
@@ -146,22 +127,32 @@ class TsuroUI:
             return (x, y + 2*S//3)
 
 
-    def draw_tile(self, i, j, tile):
-
-        drawn = set()
-
-        for a,b in tile.tile.items():
-
-            if a in drawn:
-                continue
-
-            p1 = self.get_entry_point(i,j,a,tile.rotation)
-            p2 = self.get_entry_point(i,j,b,tile.rotation)
-
-            pygame.draw.line(self.screen, PATH_COLOR, p1, p2, 3)
-
-            drawn.add(a)
-            drawn.add(b)
+    def draw_tile(self, tile: PlacedTile, rect: pygame.Rect, alpha: int = 255):
+        if alpha == 255:
+            pygame.draw.rect(self.screen, TILE_COLOR, rect)
+            drawn = set()
+            for a, b in tile.tile.items():
+                if a in drawn:
+                    continue
+                p1 = self.get_entry_point_rect(rect, a, tile.rotation)
+                p2 = self.get_entry_point_rect(rect, b, tile.rotation)
+                pygame.draw.line(self.screen, PATH_COLOR, p1, p2, 3)
+                drawn.add(a)
+                drawn.add(b)
+        else:
+            surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+            local_rect = pygame.Rect(0, 0, rect.width, rect.height)
+            pygame.draw.rect(surface, (*TILE_COLOR, alpha), local_rect)
+            drawn = set()
+            for a, b in tile.tile.items():
+                if a in drawn:
+                    continue
+                p1 = self.get_entry_point_rect(local_rect, a, tile.rotation)
+                p2 = self.get_entry_point_rect(local_rect, b, tile.rotation)
+                pygame.draw.line(surface, (*PATH_COLOR, min(255, alpha + 60)), p1, p2, 3)
+                drawn.add(a)
+                drawn.add(b)
+            self.screen.blit(surface, rect.topleft)
 
 
     def display_board(self, state):
@@ -211,12 +202,21 @@ class TsuroUI:
                         elif event.button == 3: # RIGHT CLICK
                             r = (hand_with_rotation[result].rotation + 1) % 4
                             hand_with_rotation[result] = PlacedTile(hand_with_rotation[result].tile, r)
-                
+
 
             self.draw_board(state)
             self.draw_all_hands(state)
             self.draw_hand(hand_with_rotation)
-            
+
+            # Draw hover preview on board
+            mx, my = pygame.mouse.get_pos()
+            hovered_idx = self.handle_click(mx, my, player.hand)
+            if hovered_idx != -1:
+                _, next_pos, in_bounds = state.follow_path(player.start)
+                if in_bounds:
+                    rect = pygame.Rect(next_pos.j * TILE_SIZE, next_pos.i * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                    self.draw_tile(hand_with_rotation[hovered_idx], rect, alpha=120)
+
             i = state.players.index(player)
             color = COLORS[i % len(COLORS)]
             text_surface = self.font_big.render(f"{player.name}, play a tile", True, color)
@@ -259,54 +259,8 @@ class TsuroUI:
         for idx, tile in enumerate(hand):
 
             x = spacing * (idx + 1) - TILE_SIZE // 2
-
             rect = pygame.Rect(x, y, TILE_SIZE, TILE_SIZE)
-
-            pygame.draw.rect(self.screen, TILE_COLOR, rect)
-
-            self.draw_tile_from_rect(tile, rect)
-
-    def get_entry_point_rect(self, rect, entry, rotation):
-
-        entry = self.rotate_entry(entry, rotation)
-
-        x = rect.x
-        y = rect.y
-        S = rect.width
-
-        if entry == 1:
-            return (x + S//3, y + S)
-        elif entry == 2:
-            return (x + 2*S//3, y + S)
-        elif entry == 3:
-            return (x + S, y + 2*S//3)
-        elif entry == 4:
-            return (x + S, y + S//3)
-        elif entry == 5:
-            return (x + 2*S//3, y)
-        elif entry == 6:
-            return (x + S//3, y)
-        elif entry == 7:
-            return (x, y + S//3)
-        elif entry == 8:
-            return (x, y + 2*S//3)
-        
-    def draw_tile_from_rect(self, tile: PlacedTile, rect):
-
-        drawn = set()
-
-        for a, b in tile.tile.items():
-
-            if a in drawn:
-                continue
-
-            p1 = self.get_entry_point_rect(rect, a, tile.rotation)
-            p2 = self.get_entry_point_rect(rect, b, tile.rotation)
-
-            pygame.draw.line(self.screen, PATH_COLOR, p1, p2, 3)
-
-            drawn.add(a)
-            drawn.add(b)
+            self.draw_tile(tile, rect)
 
     def draw_all_hands(self, state):
 
@@ -376,9 +330,5 @@ class TsuroUI:
         for idx, tile in enumerate(hand):
 
             x = panel_x + spacing * (idx + 1) - TILE_SIZE // 2
-
             rect = pygame.Rect(x, y, TILE_SIZE, TILE_SIZE)
-
-            pygame.draw.rect(self.screen, TILE_COLOR, rect)
-
-            self.draw_tile_from_rect(tile, rect)
+            self.draw_tile(tile, rect)
