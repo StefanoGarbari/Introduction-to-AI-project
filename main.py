@@ -6,9 +6,15 @@ from ui import TsuroUI
 
 ui = TsuroUI()
 
-p1 = RandomPlayer()
-p2 = MCTSPlayer()
-game = Game([p1, p2], ui)
+# Add player instances here (UIPlayer, MCTSPlayer, RandomPlayer) to set up the game
+# Make the AI explore more options by increasing its time limit (e.g. MCTSPlayer(3) )
+
+players = [
+    UIPlayer(ui),
+    MCTSPlayer(1),
+]
+
+game = Game(players, ui)
 
 try:
     game.play()
