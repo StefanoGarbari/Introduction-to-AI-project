@@ -330,8 +330,8 @@ class TsuroUI:
             y = start_y + i * (row_height + 10)
 
             # --- draw name ---
-            is_active = (i == state.active_player)
-            font = self.font_big if is_active else self.font
+            big = ((i == state.active_player) or (state.is_terminal() and state.is_player_alive(player)))
+            font = self.font_big if big else self.font
 
             text_surface = font.render(player.name, True, color)
 
@@ -340,6 +340,26 @@ class TsuroUI:
             )
 
             self.screen.blit(text_surface, text_rect)
+
+            # --- draw crown next to name ---
+
+            # position it just to the right of the name
+            if state.is_terminal() and state.is_player_alive(player):
+                crown_x = text_rect.right + 5
+                crown_y = text_rect.centery - 20
+
+                # crown points
+                points = [
+                    (0, 0),
+                    (15, 15),
+                    (30, 0),
+                    (45, 15),
+                    (60, 0),
+                    (50, 30),
+                    (10, 30),
+                ]
+
+                pygame.draw.polygon(self.screen, (255, 215, 0), [(x + crown_x, y + crown_y) for x, y in points])  # gold color
 
             # --- draw hand below name ---
             hand_y = y + 20
