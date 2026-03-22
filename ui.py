@@ -92,14 +92,42 @@ class TsuroUI:
         rect = pygame.Rect(j*TILE_SIZE, i*TILE_SIZE, TILE_SIZE, TILE_SIZE)
         p1 = self.get_entry_point_rect(rect, entry, 0)
         p2 = self.get_entry_point_rect(rect, exit, 0)
-
-        pygame.draw.line(self.screen, color, p1, p2, 3)
+        t1 = self.get_entry_tangent(entry, TILE_SIZE)
+        t2 = self.get_entry_tangent(exit, TILE_SIZE)
+        self.draw_curve(self.screen, color, p1, t1, p2, t2)
 
         self.draw_path(state, Position(i=i, j=j, entry=exit), color)
 
 
     def rotate_entry(self, entry: int, rotation: int) -> int:
         return ((entry - 1 + 2 * rotation) % 8) + 1
+
+
+    def get_entry_tangent(self, entry_rotated: int, S: int):
+        """Return inward control-point offset for an already-rotated entry number."""
+        d = S // 3
+        if entry_rotated in (1, 2):   # bottom edge → inward is up
+            return (0, -d)
+        elif entry_rotated in (3, 4): # right edge → inward is left
+            return (-d, 0)
+        elif entry_rotated in (5, 6): # top edge → inward is down
+            return (0, d)
+        else:                         # left edge → inward is right
+            return (d, 0)
+
+
+    def draw_curve(self, surface, color, p1, t1, p2, t2, width: int = 3):
+        """Draw a cubic Bézier curve from p1 to p2 using inward tangent offsets t1/t2."""
+        cp1 = (p1[0] + t1[0], p1[1] + t1[1])
+        cp2 = (p2[0] + t2[0], p2[1] + t2[1])
+        points = []
+        for k in range(21):
+            t = k / 20
+            mt = 1 - t
+            x = mt**3*p1[0] + 3*mt**2*t*cp1[0] + 3*mt*t**2*cp2[0] + t**3*p2[0]
+            y = mt**3*p1[1] + 3*mt**2*t*cp1[1] + 3*mt*t**2*cp2[1] + t**3*p2[1]
+            points.append((x, y))
+        pygame.draw.lines(surface, color, False, points, width)
 
 
     def get_entry_point_rect(self, rect, entry, rotation):
@@ -136,7 +164,9 @@ class TsuroUI:
                     continue
                 p1 = self.get_entry_point_rect(rect, a, tile.rotation)
                 p2 = self.get_entry_point_rect(rect, b, tile.rotation)
-                pygame.draw.line(self.screen, PATH_COLOR, p1, p2, 3)
+                t1 = self.get_entry_tangent(self.rotate_entry(a, tile.rotation), rect.width)
+                t2 = self.get_entry_tangent(self.rotate_entry(b, tile.rotation), rect.width)
+                self.draw_curve(self.screen, PATH_COLOR, p1, t1, p2, t2)
                 drawn.add(a)
                 drawn.add(b)
         else:
@@ -144,12 +174,15 @@ class TsuroUI:
             local_rect = pygame.Rect(0, 0, rect.width, rect.height)
             pygame.draw.rect(surface, (*TILE_COLOR, alpha), local_rect)
             drawn = set()
+            path_color = (*PATH_COLOR, min(255, alpha + 60))
             for a, b in tile.tile.items():
                 if a in drawn:
                     continue
                 p1 = self.get_entry_point_rect(local_rect, a, tile.rotation)
                 p2 = self.get_entry_point_rect(local_rect, b, tile.rotation)
-                pygame.draw.line(surface, (*PATH_COLOR, min(255, alpha + 60)), p1, p2, 3)
+                t1 = self.get_entry_tangent(self.rotate_entry(a, tile.rotation), local_rect.width)
+                t2 = self.get_entry_tangent(self.rotate_entry(b, tile.rotation), local_rect.width)
+                self.draw_curve(surface, path_color, p1, t1, p2, t2)
                 drawn.add(a)
                 drawn.add(b)
             self.screen.blit(surface, rect.topleft)
