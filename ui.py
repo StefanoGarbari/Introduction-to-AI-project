@@ -2,7 +2,7 @@ from tsuro import Position, Tile, PlacedTile
 import pygame
 
 TILE_SIZE = 100
-HAND_AREA = 180
+HAND_AREA = 210
 SIDE_PANEL_WIDTH = 500  # adjust as needed
 
 COLORS = [
@@ -17,8 +17,10 @@ COLORS = [
 ]
 
 BACKGROUND = (225, 191, 146)
-TILE_COLOR = (139,69,19)
+TILE_COLOR = (139, 69, 19)
 PATH_COLOR = (255, 255, 255)
+CROWN_COLOR = (255, 215, 0)
+BLACK = (0, 0, 0)
 
 class TsuroUI:
 
@@ -258,6 +260,12 @@ class TsuroUI:
             )
             self.screen.blit(text_surface, text_rect)
 
+            text_surface = self.font.render("Right click on a tile to rotate it", True, BLACK)
+            text_rect = text_surface.get_rect(
+                center=(self.board_pixel_width // 2, self.board_pixel_height + 185)
+            )
+            self.screen.blit(text_surface, text_rect)
+
             pygame.display.flip()
 
     def handle_click(self, x, y, hand):
@@ -344,11 +352,11 @@ class TsuroUI:
 
                 crown_x = text_rect.right + 5
                 crown_y = text_rect.centery - 20
-                pygame.draw.polygon(self.screen, (255, 215, 0), [(x + crown_x, y + crown_y) for x, y in points])
+                pygame.draw.polygon(self.screen, CROWN_COLOR, [(x + crown_x, y + crown_y) for x, y in points])
 
                 crown_x = text_rect.left - 65
                 crown_y = text_rect.centery - 20
-                pygame.draw.polygon(self.screen, (255, 215, 0), [(x + crown_x, y + crown_y) for x, y in points])
+                pygame.draw.polygon(self.screen, CROWN_COLOR, [(x + crown_x, y + crown_y) for x, y in points])
 
             # --- draw hand below name ---
             hand_y = y + 20
