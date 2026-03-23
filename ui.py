@@ -328,13 +328,9 @@ class TsuroUI:
 
             self.screen.blit(text_surface, text_rect)
 
-            # --- draw crown next to name ---
+            # --- draw crowns next to name ---
 
-            # position it just to the right of the name
             if state.is_terminal() and state.is_player_alive(player):
-                crown_x = text_rect.right + 5
-                crown_y = text_rect.centery - 20
-
                 # crown points
                 points = [
                     (0, 0),
@@ -346,7 +342,13 @@ class TsuroUI:
                     (10, 30),
                 ]
 
-                pygame.draw.polygon(self.screen, (255, 215, 0), [(x + crown_x, y + crown_y) for x, y in points])  # gold color
+                crown_x = text_rect.right + 5
+                crown_y = text_rect.centery - 20
+                pygame.draw.polygon(self.screen, (255, 215, 0), [(x + crown_x, y + crown_y) for x, y in points])
+
+                crown_x = text_rect.left - 65
+                crown_y = text_rect.centery - 20
+                pygame.draw.polygon(self.screen, (255, 215, 0), [(x + crown_x, y + crown_y) for x, y in points])
 
             # --- draw hand below name ---
             hand_y = y + 20
